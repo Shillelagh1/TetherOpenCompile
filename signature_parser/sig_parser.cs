@@ -5,10 +5,11 @@ namespace tether_signature_parser{
         public static void VisualizeSignatures(List<TetherSignature> signatures){
             foreach(TetherSignature i in signatures){
                 if(i.type == TetherSignature.TetherSignatureClassification.simple){
-                    Console.WriteLine(string.Format("{0}: {2} [{1}]", i.name, i.GetImmediateLengthBytes(), i.type));
+                    Console.WriteLine(string.Format("[SIMPLE] -- {0} ({1})", i.name, i.GetImmediateLengthBytes()));
                 }
                 else if(i.type == TetherSignature.TetherSignatureClassification.complex){
                     if(i.members != null){
+                        Console.WriteLine(string.Format("[COMPLEX] -- {0}", i.name));
                         foreach(var k in i.members){
                             Console.WriteLine(string.Format("> +{2}: {0} ({1})", k.Item1, k.Item2, k.Item3));
                         }
@@ -77,14 +78,12 @@ namespace tether_signature_parser{
                         }
                         sigBody.Add(lbyte);
                     }
-                    // File.WriteAllBytes(complexSigName + ".bin", sigBody.ToArray());
 
                     /// Search forwards from the body, until the '#' symbol is reached.
                     /// Afterwards grab the next four bytes, storing them as the offset.
                     /// Then, starting from after that march forward until a '|' character
                     /// or the end of the body is found, storing those characters as the name
 
-                    Console.WriteLine(">> " + complexSigName);
                     string memberTypeName = ""; 
                     List<Tuple<string, string, int>> members = new List<Tuple<string, string,int>>();
                     for(int l = 0; l < sigBody.Count; l++){
@@ -101,13 +100,16 @@ namespace tether_signature_parser{
                             }
 
                             members.Add(new Tuple<string, string,int>(memberTypeName, memberName, offset));
-                            Console.WriteLine(memberTypeName + ": " + memberName + " > " + offset);
                             memberTypeName = "";
                             continue;
                         }
 
                         memberTypeName += ((char)lbyte).ToString();
                     }
+
+                    var s = new TetherSignature(complexSigName, TetherSignature.TetherSignatureClassification.complex, 4);
+                    s.members = members;
+                    signatureList.Add(s);
                 }
             }
 
