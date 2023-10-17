@@ -51,24 +51,63 @@ namespace tether_signature_parser{
                 }
             }
 
-            /// Parse complex statements
+            /// Parse complex signatures
             for(int i = j; i < fileBytes.Length; i++){
                 byte currentByte = fileBytes[i];
-
-                List<Tuple<string, string, int>> members = new List<Tuple<string, string, int>>();
                 if(currentByte == ':'){
-                    string complexSignatureName = "";
-                    for(int k = i-1; k >= 0; k--){
-                        complexSignatureName.Insert(0, ((char)fileBytes[k]).ToString());
+                    /// Search backwards from the ':' character, collecting characters for the signature's name
+                    /// until we reach an 0x0A (newline), 0x21 ('!'), or the beginning of the file    
+                    string complexSigName = "";
+                    for(int l = i-1; i >= 0; l--){
+                        var lbyte = fileBytes[l];
+                        if(!(Char.IsLetterOrDigit((char)lbyte) || lbyte == '_')){
+                            break;
+                        }
+                        complexSigName = complexSigName.Insert(0, ((char)lbyte).ToString());
                     }
 
-                    Console.WriteLine(complexSignatureName);
+                    /// Search forwards from the ':' character, collecting bytes for the signature's body
+                    /// until we reach an 0x0A (newline), 0x21 ('!'), or EOF
+                    
+                    List<byte> sigBody = new List<byte>();
+                    for(int l = i+1; i < fileBytes.Length; l++){
+                        var lbyte = fileBytes[l];
+                        if(lbyte == '!' || lbyte == 10){
+                            break;
+                        }
+                        sigBody.Add(lbyte);
+                    }
+                    // File.WriteAllBytes(complexSigName + ".bin", sigBody.ToArray());
 
-                    // Pack the signature and send it to the collection
-                    TetherSignature newSignature = new TetherSignature(signatureName, TetherSignature.TetherSignatureClassification.complex);
-                    newSignature.members = members;
-                    signatureList.Add(newSignature);
-                    members = new List<Tuple<string, string, int>>();
+                    /// Search forwards from the body, until the '#' symbol is reached.
+                    /// Afterwards grab the next four bytes, storing them as the offset.
+                    /// Then, starting from after that march forward until a '|' character
+                    /// or the end of the body is found, storing those characters as the name
+
+                    Console.WriteLine(">> " + complexSigName);
+                    string memberTypeName = ""; 
+                    List<Tuple<string, string, int>> members = new List<Tuple<string, string,int>>();
+                    for(int l = 0; l < sigBody.Count; l++){
+                        var lbyte = sigBody[l];
+                        if(lbyte=='#'){
+                            int offset = (sigBody[l+1] << 24) | (sigBody[l+2] << 16) | (sigBody[l+3] << 8) | sigBody[l+4];
+                            
+                            string memberName = "";
+                            for(l+=5;l < sigBody.Count; l++){
+                                if(sigBody[l] == '|'){
+                                    break;
+                                }
+                                memberName += ((char)sigBody[l]).ToString();
+                            }
+
+                            members.Add(new Tuple<string, string,int>(memberTypeName, memberName, offset));
+                            Console.WriteLine(memberTypeName + ": " + memberName + " > " + offset);
+                            memberTypeName = "";
+                            continue;
+                        }
+
+                        memberTypeName += ((char)lbyte).ToString();
+                    }
                 }
             }
 
