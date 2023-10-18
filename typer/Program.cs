@@ -8,9 +8,7 @@ namespace tether_typer
     {
         public static int Main(string[] args)
         {
-            TetherSignatureParser.VisualizeSignatures(TetherSignatureParser.LoadSignatureFile("base.bin"));
-
-            // GenerateSignatures(File.ReadAllText("file.teth"));
+            GenerateSignatures(File.ReadAllText("file.teth"));
             return 0;
         }
 
@@ -49,6 +47,8 @@ namespace tether_typer
             
             foreach(Match signatureMatch in sortedSignatureMatches){
                 string signatureBody = signatureMatch.Groups[2].ToString();
+                string signatureName = signatureMatch.Groups[1].ToString();
+
                 MatchCollection memberMatches = Regex.Matches(signatureBody, EXPR.sigDefTargetCapture, RegexOptions.Multiline);
                 foreach(Match memberMatch in memberMatches){
                     string memberTypeName = memberMatch.Groups[1].ToString();
