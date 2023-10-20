@@ -16,3 +16,5 @@
 /home/owek/Documents/dev/tether/compiler/typer/bin/Debug/net7.0/signature_parser.dll
 /home/owek/Documents/dev/tether/compiler/typer/bin/Debug/net7.0/signature_parser.pdb
 /home/owek/Documents/dev/tether/compiler/typer/obj/Debug/net7.0/typer.csproj.CopyComplete
+/home/owek/Documents/dev/tether/compiler/typer/bin/Debug/net7.0/commandline_arg_parse.dll
+/home/owek/Documents/dev/tether/compiler/typer/bin/Debug/net7.0/commandline_arg_parse.pdb

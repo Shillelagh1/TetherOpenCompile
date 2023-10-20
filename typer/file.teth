@@ -1,4 +1,0 @@
-signature obj/akm{
-    int test
-    float om
-}

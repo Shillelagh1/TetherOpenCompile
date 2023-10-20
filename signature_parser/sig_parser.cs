@@ -1,4 +1,7 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Reflection;
+using static System.BitConverter;
 
 namespace tether_signature_parser{
     public static class TetherSignatureParser{
@@ -17,7 +20,29 @@ namespace tether_signature_parser{
                 }
             }
         }
+
+        public static void VisualizeSignatures(List<TetherSignature> signatures, string fileName){
+            File.WriteAllText(fileName, string.Empty);
+            using(FileStream outFile = File.Open(fileName, FileMode.Append)){
+                using(StreamWriter outSw = new StreamWriter(outFile)){
+                    foreach(TetherSignature i in signatures){
+                        if(i.type == TetherSignature.TetherSignatureClassification.simple){
+                            outSw.WriteLine(string.Format("[SIMPLE] -- {0} ({1})", i.name, i.GetImmediateLengthBytes()));
+                        }
+                        else if(i.type == TetherSignature.TetherSignatureClassification.complex){
+                            if(i.members != null){
+                                outSw.WriteLine(string.Format("[COMPLEX] -- {0}", i.name));
+                                foreach(var k in i.members){
+                                    outSw.WriteLine(string.Format("> +{2}: {0} ({1})", k.Item1, k.Item2, k.Item3));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         
+        // Look upon my works ye mighty and despair
         public static List<TetherSignature> LoadSignatureFile(string filename){
             List<TetherSignature> signatureList = new List<TetherSignature>();
 
@@ -116,6 +141,88 @@ namespace tether_signature_parser{
             return signatureList;
         }
 
+        // Todo: Document please.
+        public static byte[] WriteSignatureFile(List<TetherSignature> objects){
+            var simple_objects = new List<TetherSignature>();
+            var complex_objects = new List<TetherSignature>();
+
+            foreach(var i in objects){
+                if(i.type == TetherSignature.TetherSignatureClassification.simple){
+                    simple_objects.Add(i);
+                }
+                if(i.type == TetherSignature.TetherSignatureClassification.complex){
+                    complex_objects.Add(i);
+                }
+            }
+
+            List<byte> fileOut = new List<byte>();
+
+            foreach(var i in simple_objects){
+                List<byte> body = new List<byte>();
+                foreach(char j in i.name){
+                    body.Add((byte)j);
+                }
+                body.Add((byte)58); // :
+                body.Add((byte)i.GetImmediateLengthBytes());
+                body.ForEach((x)=>{fileOut.Add(x);});
+            }
+            
+            fileOut.Add((byte)10);
+
+            foreach(var i in complex_objects){
+                List<byte> body = new List<byte>();
+
+                // Append object type name
+                foreach(char j in i.name){
+                    body.Add((byte)j);
+                }
+                body.Add((byte)':'); // :
+
+                // Append members
+                if(i.members != null){
+                    for(int j = 0; j < i.members.Count(); j++){
+                        var member = i.members[j];
+
+                        // Append member type name
+                        foreach(char k in member.Item1){
+                            body.Add((byte)k);
+                        }
+
+                        body.Add((byte)'#');
+
+                        // Append member length
+                        byte[] bytes = BitConverter.GetBytes(member.Item3).Reverse().ToArray();
+                        foreach(byte k in bytes){
+                            body.Add(k);
+                        }
+                        
+                        // Append member name
+                        foreach(char k in member.Item2){
+                            body.Add((byte)k);
+                        }
+
+                        // Append member separator (if applicable)
+                        if(j < i.members.Count - 1){
+                            body.Add((byte)124);
+                        }
+                    }
+                }
+
+                body.Add((byte)'!');
+
+                // Push the signature out
+                body.ForEach((x)=>{fileOut.Add(x);});
+            }
+
+            return fileOut.ToArray();
+        }
+
+        public static void WriteSignatureFile(string fileName, List<TetherSignature> objects){
+            File.WriteAllBytes(fileName, WriteSignatureFile(objects));
+        }
+
+        /// We might not need this in the future, it isn't very important in bin files
+        /// where order matters but it took some time to write so I'd prefer to keep it.
         public static List<byte[]> SplitBytes(byte[] bytes, byte separator){
             List<byte[]> result = new List<byte[]>();
 

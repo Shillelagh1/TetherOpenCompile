@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="Object.cs"/>
-    <Reference Include="/home/owek/Documents/dev/tether/compiler/signature_parser/bin/Debug/net7.0/signature_parser.dll"/>
+    <Reference Include="../signature_parser/bin/Debug/net7.0/signature_parser.dll"/>
+    <Reference Include="../commandline_arg_parse/bin/Debug/net7.0/commandline_arg_parse.dll"/>
   </ItemGroup>
 </Project>
